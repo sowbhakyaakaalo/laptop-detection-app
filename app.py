@@ -31,7 +31,7 @@ def detect_objects(img):
     predictions = predictions[0]
 
     boxes, scores, class_ids = [], [], []
-    threshold = 0.6
+    threshold = 0.4  # lowered threshold from 0.6 to 0.4
 
     for det in predictions:
         cx, cy, w, h = det[:4]
@@ -49,6 +49,7 @@ def detect_objects(img):
             scores.append(float(score))
             class_ids.append(class_id)
 
+    # draw boxes if found
     for i in range(len(boxes)):
         x1, y1, x2, y2 = boxes[i]
         class_name = class_names[class_ids[i]]
@@ -60,16 +61,24 @@ def detect_objects(img):
         cv2.putText(orig, label, (x1 + 5, y1 - 5),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
 
-    return orig
+    # tell if anything detected
+    found_anything = len(boxes) > 0
+
+    return orig, found_anything
 
 # Streamlit UI
 st.title("💻 Laptop DIMM Slot Detection")
-st.write("Upload a laptop image to detect RAM slots using ONNX model.")
+st.write("Upload a laptop image to detect RAM slots using an ONNX model.")
 
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
     img_np = np.array(image)
-    result = detect_objects(img_np)
-    st.image(result, caption="Detection Result", use_column_width=True)
+    result, found_anything = detect_objects(img_np)
+
+    if found_anything:
+        st.image(result, caption="Detection Result", use_column_width=True)
+    else:
+        st.image(result, caption="No DIMM Detected", use_column_width=True)
+
